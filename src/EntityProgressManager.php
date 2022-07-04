@@ -109,7 +109,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
    *   An array containing completness information.
    */
   public function getProgress(ContentEntityInterface $entity, $no_cache = FALSE) {
-    $no_cache = TRUE;
     if ($entity) {
       $entity_type = $entity->getEntityTypeId();
       $keys = [
@@ -193,6 +192,16 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           }
           break;
 
+        case 'field_signature':
+          $progress = FALSE;
+          // Signature field does not correctly check empty.
+          foreach ($field->getValue() as $value) {
+            if (!empty($value['value'])) {
+              $progress = TRUE;
+            }
+          }
+          break;
+
         case 'entity_reference':
         case 'entity_reference_revisions':
           $referenced_entities = $field->referencedEntities();
@@ -213,9 +222,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           $progress = !$field->isEmpty();
           break;
       }
-    }
-    if ($field_name === 'field_signature') {
-      ksm($field_name, $progress, $field->getValue(), $field->isEmpty());
     }
     return $progress;
   }
