@@ -1,0 +1,6 @@
+name: Entity Progress
+type: module
+description: Track entity progress.
+package: Custom
+core: 8.x
+core_version_requirement: ^8 || ^9

@@ -1,0 +1,17 @@
+{%
+  set classes = [
+    'entity-progress-status',
+    incomplete ? 'incomplete' : 'complete',
+  ]
+%}
+<div{{ attributes.addClass(classes) }}>
+  <div class="entity-progress-status-title">{{ title }} <small>{% if incomplete %}{{ percent }}% {{ percent_label }}{% else %}{{ percent_label }}{% endif %}</small></div>
+  <div class="entity-progress-status-bar-wrapper">
+    <div class="entity-progress-status-bar">
+      <div class="entity-progress-status-bar-status" style="width: {{ percent }}%;"></div>
+    </div>
+  </div>
+  {% if show_results_link %}
+    {{ results_link }}
+  {% endif %}
+</div>

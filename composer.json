@@ -1,0 +1,22 @@
+{
+  "name": "jacerider/entity_progress",
+  "description": "Track entity progress.",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "homepage": "https://github.com/jacerider/entity_progress",
+  "authors": [
+    {
+      "name": "Cyle Carlson (JaceRider)",
+      "email": "jacerider@gmail.com",
+      "role": "Maintainer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/jacerider/entity_progress/issues",
+    "source": "https://github.com/jacerider/entity_progress"
+  },
+  "minimum-stability": "dev",
+  "require": {
+    "drupal/core": "^8.8 || ^9"
+  }
+}

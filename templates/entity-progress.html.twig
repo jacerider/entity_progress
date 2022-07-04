@@ -1,0 +1,26 @@
+{%
+  set classes = [
+    'entity-progress',
+  ]
+%}
+{% if incomplete %}
+  <div{{ attributes.addClass(classes) }}>
+    <div class="entity-incomplete">
+    <h2>{{ missing_title }} <small>{{ missing_subtitle }}</small></h2>
+      <div class="entity-incomplete-item">
+        <div class="entity-incomplete-fields">
+          {% for field in incomplete_fields %}
+            <div class="entity-incomplete-field"><span>{{ field }}</span></div>
+          {% endfor %}
+          {% for extra in extra %}
+            <div class="entity-incomplete-field"><span>{{ extra }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="entity-progress">
+    <h2>{{ complete_title }} <small>{{ complete_subtitle }}</small></h2>
+  </div>
+{% endif %}

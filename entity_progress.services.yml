@@ -1,0 +1,4 @@
+services:
+  entity_progress.manager:
+    class: Drupal\entity_progress\EntityProgressManager
+    arguments: ['@router.route_provider','@module_handler', '@cache.data', '@entity_type.manager', '@entity_field.manager']
