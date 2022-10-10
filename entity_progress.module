@@ -13,6 +13,7 @@ use Drupal\Core\Field\Entity\BaseFieldOverride;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\entity_progress\EntityProgressPreRender;
 
 /**
  * Implements hook_theme().
@@ -197,68 +198,48 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
     /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
     $entity = $form_object->getEntity();
     foreach (Element::children($form) as $id) {
+      $element = &$form[$id];
       if ($field_definition = $entity->getFieldDefinition($id)) {
-        entity_progress_field_process($form[$id], $entity, $field_definition);
-      }
-    }
-  }
-}
+        if (entity_process_field_enabled($field_definition)) {
+          /** @var \Drupal\entity_progress\EntityProgressManager $progress_manager */
+          $progress_manager = \Drupal::service('entity_progress.manager');
+          $progress_definitions = $progress_manager->getFieldProgress($entity);
+          if (!isset($progress_definitions[$field_definition->getName()])) {
+            continue;
+          }
+          $form[$id]['#entity_progress'] = TRUE;
 
-/**
- * Process each form field.
- */
-function entity_progress_field_process(&$element, ContentEntityInterface $entity, FieldDefinitionInterface $field_definition) {
-  if (empty($element['#entity_progress'])) {
-    $element['#entity_progress'] = TRUE;
-    $enable = 0;
-    $optional = 0;
-    if ($field_definition instanceof BaseFieldDefinition || $field_definition instanceof BaseFieldOverride) {
-      if ($field_settings = $field_definition->getSetting('entity_progress')) {
-        $enable = !empty($field_settings['enable']);
-        $optional = !empty($field_settings['optional']);
-      }
-    }
-    if ($field_definition instanceof ThirdPartySettingsInterface) {
-      $enable = $field_definition->getThirdPartySetting('entity_progress', 'enable', $enable);
-      $optional = $field_definition->getThirdPartySetting('entity_progress', 'optional', $optional);
-    }
-    if (!empty($enable) && empty($optional)) {
-      /** @var \Drupal\entity_progress\EntityProgressManager $progress_manager */
-      $progress_manager = \Drupal::service('entity_progress.manager');
-      $progress_definitions = $progress_manager->getFieldProgress($entity);
-      if (!isset($progress_definitions[$field_definition->getName()])) {
-        return;
-      }
-      entity_progress_field_process_recursive($element);
-
-      // If type is a radio we want to remove the _none option.
-      if (isset($element['widget']['#type']) && in_array($element['widget']['#type'], ['radios', 'exo_radios'])) {
-        unset($element['widget']['#options']['_none']);
-        if ($element['widget']['#default_value'] == '_none') {
-          $element['widget']['#default_value'] = NULL;
+          // If type is a radio we want to remove the _none option.
+          if (isset($element['widget']['#type']) && in_array($element['widget']['#type'], ['radios', 'exo_radios'])) {
+            unset($element['widget']['#options']['_none']);
+            if ($element['widget']['#default_value'] == '_none') {
+              $element['widget']['#default_value'] = NULL;
+            }
+          }
         }
       }
     }
+    $form['#pre_render'][] = [EntityProgressPreRender::class, 'preRender'];
   }
 }
 
 /**
- * Recursively set after build callbacks on elements that require completion.
+ * Check if field tracks progress.
+ *
+ * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
  */
-function entity_progress_field_process_recursive(&$element) {
-  entity_progress_set_element_required($element);
-  foreach (Element::children($element) as $id) {
-    entity_progress_field_process_recursive($element[$id]);
+function entity_process_field_enabled(FieldDefinitionInterface $field_definition) {
+  $enable = 0;
+  $optional = 0;
+  if ($field_definition instanceof BaseFieldDefinition || $field_definition instanceof BaseFieldOverride) {
+    if ($field_settings = $field_definition->getSetting('entity_progress')) {
+      $enable = !empty($field_settings['enable']);
+      $optional = !empty($field_settings['optional']);
+    }
   }
-}
-
-/**
- * Recursively set required class.
- */
-function entity_progress_set_element_required(&$element) {
-  $element['#attributes']['class'][] = 'required';
-  $element['#label_attributes']['class'][] = 'form-required';
-  if (isset($element['#theme_wrappers'])) {
-    $element['#wrapper_attributes']['class'][] = 'required';
+  if ($field_definition instanceof ThirdPartySettingsInterface) {
+    $enable = $field_definition->getThirdPartySetting('entity_progress', 'enable', $enable);
+    $optional = $field_definition->getThirdPartySetting('entity_progress', 'optional', $optional);
   }
+  return !empty($enable) || !empty($optional);
 }
