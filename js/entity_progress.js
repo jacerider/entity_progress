@@ -1,6 +1,6 @@
 /**
  * @file
- * Provides the core logic for fieldgroup.
+ * Provides the core logic for entity progress.
  */
 
  (function ($) {
