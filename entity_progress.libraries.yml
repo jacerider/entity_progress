@@ -1,0 +1,6 @@
+form:
+  js:
+    js/entity_progress.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once

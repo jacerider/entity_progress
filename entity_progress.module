@@ -208,6 +208,8 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
             continue;
           }
           $form[$id]['#entity_progress'] = TRUE;
+          $form[$id]['#entity_progress_field_type'] = $field_definition->getType();
+          $form[$id]['#entity_progress_settings'] = entity_process_field_settings($field_definition);
 
           // If type is a radio we want to remove the _none option.
           if (isset($element['widget']['#type']) && in_array($element['widget']['#type'], ['radios', 'exo_radios'])) {
@@ -229,17 +231,27 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
  * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
  */
 function entity_process_field_enabled(FieldDefinitionInterface $field_definition) {
-  $enable = 0;
-  $optional = 0;
+  if ($field_settings = entity_process_field_settings($field_definition)) {
+    return !empty($field_settings['enable']) || !empty($field_settings['optional']);
+  }
+  return FALSE;
+}
+
+/**
+ * Check if field tracks progress.
+ *
+ * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+ */
+function entity_process_field_settings(FieldDefinitionInterface $field_definition) {
   if ($field_definition instanceof BaseFieldDefinition || $field_definition instanceof BaseFieldOverride) {
     if ($field_settings = $field_definition->getSetting('entity_progress')) {
-      $enable = !empty($field_settings['enable']);
-      $optional = !empty($field_settings['optional']);
+      return $field_settings;
     }
   }
   if ($field_definition instanceof ThirdPartySettingsInterface) {
-    $enable = $field_definition->getThirdPartySetting('entity_progress', 'enable', $enable);
-    $optional = $field_definition->getThirdPartySetting('entity_progress', 'optional', $optional);
+    if ($field_settings = $field_definition->getThirdPartySettings('entity_progress')) {
+      return $field_settings;
+    }
   }
-  return !empty($enable) || !empty($optional);
+  return NULL;
 }
