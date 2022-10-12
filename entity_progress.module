@@ -5,6 +5,7 @@
  * Primary module hooks for entity progress module.
  */
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
 use Drupal\Core\Entity\ContentEntityFormInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -80,11 +81,24 @@ function entity_progress_form_field_config_edit_form_alter(&$form, FormStateInte
     $form['entity_progress']['zero'] = [
       '#type' => 'checkbox',
       '#title' => t('Count 0 as progress'),
-      '#description' => t('Boolean values can be valued as 0 or 1. When enabled this will count 0 as progress and 1 or NULL as inprogress.'),
+      '#description' => t('Boolean values can be valued as 0 or 1. When enabled this will count 0 as progress and 1 or NULL as progress.'),
       '#default_value' => !empty($field->getThirdPartySetting('entity_progress', 'zero')) ? $field->getThirdPartySetting('entity_progress', 'zero') : 0,
       '#states' => [
         'visible' => [
           ':input[name="entity_progress[enable]"]' => ['checked' => TRUE],
+          ':input[name="entity_progress[zero_one]"]' => ['checked' => FALSE],
+        ],
+      ],
+    ];
+    $form['entity_progress']['zero_one'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Count 0 or 1 as progress'),
+      '#description' => t('Boolean values can be valued as 0 or 1. When enabled this will count 0 or 1 as progress.'),
+      '#default_value' => !empty($field->getThirdPartySetting('entity_progress', 'zero_one')) ? $field->getThirdPartySetting('entity_progress', 'zero_one') : 0,
+      '#states' => [
+        'visible' => [
+          ':input[name="entity_progress[enable]"]' => ['checked' => TRUE],
+          ':input[name="entity_progress[zero]"]' => ['checked' => FALSE],
         ],
       ],
     ];
@@ -176,6 +190,7 @@ function entity_progress_form_field_config_edit_form_submit(array $form, FormSta
     'dependency',
     'optional',
     'zero',
+    'zero_one',
     'negate',
     'all',
   ] as $field_name) {
@@ -203,7 +218,8 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
         if (entity_process_field_enabled($field_definition)) {
           /** @var \Drupal\entity_progress\EntityProgressManager $progress_manager */
           $progress_manager = \Drupal::service('entity_progress.manager');
-          $progress_definitions = $progress_manager->getFieldProgress($entity);
+          $cacheable_metadata = CacheableMetadata::createFromObject($entity);
+          $progress_definitions = $progress_manager->getFieldProgress($entity, $cacheable_metadata);
           if (!isset($progress_definitions[$field_definition->getName()])) {
             continue;
           }

@@ -128,7 +128,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           $progress = $cache->data;
         }
         else {
-          $cacheable_metadata = CacheableMetadata::createFromObject($entity);
+          $cacheable_metadata = new CacheableMetadata();
           $completion = $this->getFieldProgress($entity, $cacheable_metadata);
           $progress = [
             'total' => count($completion),
@@ -166,7 +166,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
   /**
    * Check if field is progress.
    */
-  protected function isFieldProgress($entity, $field_name, $is_zero = NULL, $require_all = FALSE, CacheableMetadata $cacheable_metadata = NULL) {
+  protected function isFieldProgress($entity, $field_name, array $settings, CacheableMetadata $cacheable_metadata = NULL) {
     $progress = FALSE;
     if ($entity->hasField($field_name)) {
       $field = $entity->{$field_name};
@@ -174,6 +174,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       if ($cacheable_metadata) {
         $cacheable_metadata->addCacheableDependency($definition);
       }
+      $require_all = $settings['all'] ?: FALSE;
       if ($require_all) {
         // Require all items to have a value.
         $cardinality = $definition->getFieldStorageDefinition()->getCardinality();
@@ -184,11 +185,12 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       }
       switch ($definition->getType()) {
         case 'boolean':
-          if (!is_null($is_zero)) {
-            $progress = $is_zero ? (int) $field->value === 0 : (int) $field->value === 1;
+          $progress = (int) $field->value === 1;
+          if (!empty($settings['zero'])) {
+            $progress = (int) $field->value === 0;
           }
-          else {
-            $progress = (int) $field->value === 1;
+          elseif (!empty($settings['zero_one'])) {
+            $progress = (int) $field->value === 0 || (int) $field->value === 1;
           }
           break;
 
@@ -230,22 +232,32 @@ class EntityProgressManager implements EntityProgressManagerInterface {
    * Check each field for completion.
    */
   public function getFieldProgress(ContentEntityInterface $entity, CacheableMetadata $cacheable_metadata = NULL) {
+    $cacheable_metadata = $cacheable_metadata ?: new CacheableMetadata();
+    $cacheable_metadata->addCacheableDependency($entity);
     $entity_type = $entity->getEntityTypeId();
     $keys = [
       'entity.progress',
+      'field.progress',
       $entity_type,
       $entity->id(),
     ];
     $cid = implode('.', $keys);
     if (!isset($this->fieldProgress[$cid])) {
-      $completion = [];
-      $definitions = $this->getFieldDefinitions($entity);
-      $this->moduleHandler->alter('entity_progress_fields', $definitions, $entity);
-      foreach ($definitions as $field_name => $definition) {
-        if ($entity->get($field_name)->access('update')) {
-          $require_all = $this->getDefinitionSetting($definition, 'all', FALSE);
-          $completion[$field_name] = $this->isFieldProgress($entity, $field_name, NULL, $require_all, $cacheable_metadata);
+
+      if ($cache = $this->cacheGet($cid)) {
+        $completion = $cache->data;
+      }
+      else {
+        $completion = [];
+        $definitions = $this->getFieldDefinitions($entity);
+        $this->moduleHandler->alter('entity_progress_fields', $definitions, $entity);
+        foreach ($definitions as $field_name => $definition) {
+          if ($entity->get($field_name)->access('update')) {
+            $settings = $this->getDefinitionSettings($definition);
+            $completion[$field_name] = $this->isFieldProgress($entity, $field_name, $settings, $cacheable_metadata);
+          }
         }
+        $this->cacheSet($cid, $completion, Cache::PERMANENT, $cacheable_metadata->getCacheTags());
       }
       $this->fieldProgress[$cid] = $completion;
     }
@@ -285,6 +297,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       'dependency' => NULL,
       'optional' => FALSE,
       'zero' => FALSE,
+      'zero_one' => FALSE,
       'negate' => FALSE,
       'all' => FALSE,
     ];
@@ -329,8 +342,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       $enabled = $settings['enable'];
       if ($force || $enabled) {
         $dependency = $settings['dependency'];
-        $is_zero = $settings['zero'];
-        $require_all = $settings['all'];
         $valid = TRUE;
         if ($enabled && $dependency) {
           // Incorrect configuration. Dependency cannot require itself.
@@ -347,7 +358,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
             $valid = FALSE;
           }
           if ($valid) {
-            $valid = $this->isFieldProgress($entity, $dependency, !empty($is_zero), $require_all);
+            $valid = $this->isFieldProgress($entity, $dependency, $settings);
             if (!empty($settings['negate'])) {
               $valid = empty($valid);
             }
