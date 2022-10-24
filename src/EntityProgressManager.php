@@ -77,13 +77,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
   protected $definitions;
 
   /**
-   * An array containing field completion keyed by entity id.
-   *
-   * @var array
-   */
-  protected $fieldProgress;
-
-  /**
    * Constructs a new EntityProgressManager object.
    */
   public function __construct(RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache_backend, EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager) {
@@ -242,26 +235,22 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       $entity->id(),
     ];
     $cid = implode('.', $keys);
-    if (!isset($this->fieldProgress[$cid])) {
-
-      if ($cache = $this->cacheGet($cid)) {
-        $completion = $cache->data;
-      }
-      else {
-        $completion = [];
-        $definitions = $this->getFieldDefinitions($entity);
-        $this->moduleHandler->alter('entity_progress_fields', $definitions, $entity);
-        foreach ($definitions as $field_name => $definition) {
-          if ($entity->get($field_name)->access('update')) {
-            $settings = $this->getDefinitionSettings($definition);
-            $completion[$field_name] = $this->isFieldProgress($entity, $field_name, $settings, $cacheable_metadata);
-          }
-        }
-        $this->cacheSet($cid, $completion, Cache::PERMANENT, $cacheable_metadata->getCacheTags());
-      }
-      $this->fieldProgress[$cid] = $completion;
+    if ($cache = $this->cacheGet($cid)) {
+      $completion = $cache->data;
     }
-    return $this->fieldProgress[$cid];
+    else {
+      $completion = [];
+      $definitions = $this->getFieldDefinitions($entity);
+      $this->moduleHandler->alter('entity_progress_fields', $definitions, $entity);
+      foreach ($definitions as $field_name => $definition) {
+        if ($entity->get($field_name)->access('update')) {
+          $settings = $this->getDefinitionSettings($definition);
+          $completion[$field_name] = $this->isFieldProgress($entity, $field_name, $settings, $cacheable_metadata);
+        }
+      }
+      $this->cacheSet($cid, $completion, Cache::PERMANENT, $cacheable_metadata->getCacheTags());
+    }
+    return $completion;
   }
 
   /**
