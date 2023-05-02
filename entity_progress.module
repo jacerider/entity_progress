@@ -145,7 +145,7 @@ function entity_progress_form_field_config_edit_form_alter(&$form, FormStateInte
   $form['entity_progress']['negate'] = [
     '#type' => 'checkbox',
     '#title' => t('Negate the dependency'),
-    '#description' => t('This will negate the dependency so the field will only be included in the entity progress IF the dependent field DOES NOT have a value.'),
+    '#description' => t('This will negate the dependency so the field will only be included in the entity progress IF the dependent field DOES NOT have a value. If the dependent field is a boolean marked as allowing both 0 and 1, then negating the dependency will required this field if the dependent field is 0. If it is not negated, it will require this field if the dependent field is 1.'),
     '#default_value' => !empty($field->getThirdPartySetting('entity_progress', 'negate')) ? $field->getThirdPartySetting('entity_progress', 'negate') : 0,
     '#states' => [
       'visible' => [
@@ -220,12 +220,6 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
           $progress_manager = \Drupal::service('entity_progress.manager');
           $cacheable_metadata = CacheableMetadata::createFromObject($entity);
           $progress_definitions = $progress_manager->getFieldProgress($entity, $cacheable_metadata);
-          if (!isset($progress_definitions[$field_definition->getName()])) {
-            continue;
-          }
-          $form[$id]['#entity_progress'] = TRUE;
-          $form[$id]['#entity_progress_field_type'] = $field_definition->getType();
-          $form[$id]['#entity_progress_settings'] = entity_process_field_settings($field_definition);
 
           // If type is a radio we want to remove the _none option.
           if (isset($element['widget']['#type']) && in_array($element['widget']['#type'], ['radios', 'exo_radios'])) {
@@ -234,6 +228,12 @@ function entity_progress_form_alter(array &$form, FormStateInterface $form_state
               $element['widget']['#default_value'] = NULL;
             }
           }
+          if (!isset($progress_definitions[$field_definition->getName()])) {
+            continue;
+          }
+          $form[$id]['#entity_progress'] = TRUE;
+          $form[$id]['#entity_progress_field_type'] = $field_definition->getType();
+          $form[$id]['#entity_progress_settings'] = entity_process_field_settings($field_definition);
         }
       }
     }

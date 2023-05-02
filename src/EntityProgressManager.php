@@ -7,11 +7,8 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Cache\UseCacheBackendTrait;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
-use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
 use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
-use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Url;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
@@ -75,6 +72,20 @@ class EntityProgressManager implements EntityProgressManagerInterface {
    * @var array
    */
   protected $definitions;
+
+  /**
+   * An array containing all field definitions enabled for progress.
+   *
+   * @var array
+   */
+  protected $definition;
+
+  /**
+   * The cache tags for the progress.
+   *
+   * @var array
+   */
+  protected $cacheTags;
 
   /**
    * Constructs a new EntityProgressManager object.
@@ -178,12 +189,14 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       }
       switch ($definition->getType()) {
         case 'boolean':
-          $progress = (int) $field->value === 1;
-          if (!empty($settings['zero'])) {
-            $progress = (int) $field->value === 0;
-          }
-          elseif (!empty($settings['zero_one'])) {
-            $progress = (int) $field->value === 0 || (int) $field->value === 1;
+          if (!is_null($field->value)) {
+            $progress = (int) $field->value === 1;
+            if (!empty($settings['zero'])) {
+              $progress = (int) $field->value === 0;
+            }
+            elseif (!empty($settings['zero_one'])) {
+              $progress = (int) $field->value === 0 || (int) $field->value === 1;
+            }
           }
           break;
 
@@ -348,6 +361,12 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           }
           if ($valid) {
             $valid = $this->isFieldProgress($entity, $dependency, $settings);
+            $dependency_settings = $this->getDefinitionSettings($dependency_definition);
+            if (!empty($dependency_settings['zero_one']) && !is_null($entity->get($dependency)->value)) {
+              // We have a boolean field that is marked as complete with either a
+              // 0 or a 1. Mark it as complete if it has a 1 value.
+              $valid = !empty($entity->get($dependency)->value);
+            }
             if (!empty($settings['negate'])) {
               $valid = empty($valid);
             }
