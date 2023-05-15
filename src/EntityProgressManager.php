@@ -124,7 +124,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
       if ($no_cache) {
         unset($this->progress[$cid]);
         unset($this->definitions[$cid]);
-        unset($this->fieldProgress[$cid]);
         $this->cacheBackend->delete($cid);
       }
       if (!isset($this->progress[$cid])) {
