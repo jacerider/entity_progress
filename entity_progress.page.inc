@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
+use Drupal\Core\Template\Attribute;
 
 /**
  * Implements hook_preprocess_entity_progress().
@@ -57,6 +58,9 @@ function template_preprocess_entity_progress_status(&$variables) {
   $variables['percent_label'] = $variables['percent_label'] ?: t('Complete');
   $variables['trigger_label'] = $variables['trigger_label'] ?: t('Click for a list of missing data');
   $variables['subtitle'] = $variables['subtitle'] ?: t('@percentage Complete');
+
+  $variables['title_attributes'] = new Attribute($variables['title_attributes'] ?? []);
+  $variables['percent_attributes'] = new Attribute($variables['percent_attributes'] ?? []);
 
   if ($variables['show_results_link'] && !empty($variables['incomplete'])) {
     $exo_modal_generator = \Drupal::service('exo_modal.generator');

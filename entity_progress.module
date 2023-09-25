@@ -35,9 +35,11 @@ function entity_progress_theme() {
   $theme['entity_progress_status'] = [
     'variables' => [
       'title' => '',
+      'title_attributes' => [],
       'subtitle' => '',
       'trigger_label' => '',
       'percent_label' => '',
+      'percent_attributes' => [],
       'progress' => [],
       'show_results_link' => FALSE,
       'attributes' => [],
