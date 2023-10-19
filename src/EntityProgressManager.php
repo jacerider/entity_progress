@@ -354,35 +354,37 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           if (!isset($entity->{$dependency})) {
             $valid = FALSE;
           }
-          $dependency_definition = $entity->{$dependency}->getFieldDefinition();
-          $dependency_settings = $this->getDefinitionSettings($dependency_definition);
-          // $skip = FALSE;
-          if (!empty($dependency_settings['dependency']) && $dependency_settings['dependency'] === $definition->getName()) {
-            // Recursive dependencies.
-            $valid = TRUE;
-            if (!empty($settings['optional'])) {
-              if (!$this->isFieldProgress($entity, $definition->getName(), $settings) && $this->isFieldProgress($entity, $dependency, $dependency_settings)) {
-                $valid = FALSE;
-              }
-            }
-          }
           else {
-            if (!$this->isDefinitionProgress($entity, $dependency_definition, TRUE)) {
-              $valid = FALSE;
+            $dependency_definition = $entity->{$dependency}->getFieldDefinition();
+            $dependency_settings = $this->getDefinitionSettings($dependency_definition);
+            // $skip = FALSE;
+            if (!empty($dependency_settings['dependency']) && $dependency_settings['dependency'] === $definition->getName()) {
+              // Recursive dependencies.
+              $valid = TRUE;
+              if (!empty($settings['optional'])) {
+                if (!$this->isFieldProgress($entity, $definition->getName(), $settings) && $this->isFieldProgress($entity, $dependency, $dependency_settings)) {
+                  $valid = FALSE;
+                }
+              }
             }
-            if ($valid) {
-              $valid = $this->isFieldProgress($entity, $dependency, $dependency_settings);
-              if (!empty($dependency_settings['zero_one']) && !is_null($entity->get($dependency)->value)) {
-                // We have a boolean field that is marked as complete with
-                // either a 0 or a 1. Mark it as complete if it has a 1 value.
-                // We only do this when acting as a dependency.
-                $valid = !empty($entity->get($dependency)->value);
-              }
-              if (!empty($settings['negate'])) {
-                $valid = empty($valid);
-              }
-              if (!$force && !empty($settings['optional'])) {
+            else {
+              if (!$this->isDefinitionProgress($entity, $dependency_definition, TRUE)) {
                 $valid = FALSE;
+              }
+              if ($valid) {
+                $valid = $this->isFieldProgress($entity, $dependency, $dependency_settings);
+                if (!empty($dependency_settings['zero_one']) && !is_null($entity->get($dependency)->value)) {
+                  // We have a boolean field that is marked as complete with
+                  // either a 0 or a 1. Mark it as complete if it has a 1 value.
+                  // We only do this when acting as a dependency.
+                  $valid = !empty($entity->get($dependency)->value);
+                }
+                if (!empty($settings['negate'])) {
+                  $valid = empty($valid);
+                }
+                if (!$force && !empty($settings['optional'])) {
+                  $valid = FALSE;
+                }
               }
             }
           }
