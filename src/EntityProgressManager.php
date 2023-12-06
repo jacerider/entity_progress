@@ -253,7 +253,6 @@ class EntityProgressManager implements EntityProgressManagerInterface {
     else {
       $completion = [];
       $definitions = $this->getFieldDefinitions($entity);
-      $this->moduleHandler->alter('entity_progress_fields', $definitions, $entity);
       foreach ($definitions as $field_name => $definition) {
         if ($entity->get($field_name)->access('update')) {
           $settings = $this->getDefinitionSettings($definition);
@@ -285,6 +284,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
           $this->definitions[$cid][$key] = $definition;
         }
       }
+      $this->moduleHandler->alter('entity_progress_fields', $this->definitions[$cid], $entity);
     }
     return $this->definitions[$cid];
   }
