@@ -132,6 +132,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
         }
         else {
           $cacheable_metadata = new CacheableMetadata();
+          $cacheable_metadata->addCacheTags($this->cacheTags);
           $completion = $this->getFieldProgress($entity, $cacheable_metadata);
           $progress = [
             'total' => count($completion),
