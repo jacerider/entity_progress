@@ -38,7 +38,7 @@ interface EntityProgressManagerInterface {
    * @return \Drupal\Core\Field\FieldDefinitionInterface[]
    *   The field definitions.
    */
-  public function getFieldProgress(ContentEntityInterface $entity, CacheableMetadata $cacheable_metadata = NULL);
+  public function getFieldProgress(ContentEntityInterface $entity, ?CacheableMetadata $cacheable_metadata = NULL);
 
   /**
    * Get field definition of fields set for progress checking.

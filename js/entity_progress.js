@@ -3,7 +3,7 @@
  * Provides the core logic for entity progress.
  */
 
- (function ($) {
+ (function ($, Drupal, once) {
 
   'use strict';
 
@@ -12,10 +12,10 @@
    */
   Drupal.behaviors.entityProgress = {
     attach: function (context, settings) {
-      $('.entity-progress-required [required], .entity-progress-required[required]', context).once('entity-progress-required').each(function () {
-        $(this).removeAttr('required');
+      once('entity-progress-required', '.entity-progress-required [required], .entity-progress-required[required]', context).forEach(function (element) {
+        $(element).removeAttr('required');
       });
     }
   };
 
-})(jQuery);
+})(jQuery, Drupal, once);

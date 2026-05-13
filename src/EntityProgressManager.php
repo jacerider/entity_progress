@@ -170,7 +170,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
   /**
    * Check if field is progress.
    */
-  protected function isFieldProgress($entity, $field_name, array $settings, CacheableMetadata $cacheable_metadata = NULL) {
+  protected function isFieldProgress($entity, $field_name, array $settings, ?CacheableMetadata $cacheable_metadata = NULL) {
     $progress = FALSE;
     if ($entity->hasField($field_name)) {
       $field = $entity->{$field_name};
@@ -237,7 +237,7 @@ class EntityProgressManager implements EntityProgressManagerInterface {
   /**
    * Check each field for completion.
    */
-  public function getFieldProgress(ContentEntityInterface $entity, CacheableMetadata $cacheable_metadata = NULL) {
+  public function getFieldProgress(ContentEntityInterface $entity, ?CacheableMetadata $cacheable_metadata = NULL) {
     $cacheable_metadata = $cacheable_metadata ?: new CacheableMetadata();
     $cacheable_metadata->addCacheableDependency($entity);
     $entity_type = $entity->getEntityTypeId();

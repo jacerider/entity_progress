@@ -3,4 +3,5 @@ form:
     js/entity_progress.js: {}
   dependencies:
     - core/jquery
-    - core/jquery.once
+    - core/drupal
+    - core/once
